@@ -129,10 +129,10 @@ class FlutterPosPrinterPlatformPlugin : FlutterPlugin, MethodCallHandler, Plugin
 //                Log.d("bluetooth", "envia bt: ${String(readBuf)}")
                 }
                 BluetoothConstants.MESSAGE_READ -> {
-                    val readBuf = msg.obj as ByteArray
-                    var readMessage = String(readBuf, 0, msg.arg1)
-                    readMessage = readMessage.trim { it <= ' ' }
-                    Log.d("bluetooth", "receive bt: $readMessage")
+//                    val readBuf = msg.obj as ByteArray
+//                    var readMessage = String(readBuf, 0, msg.arg1)
+//                    readMessage = readMessage.trim { it <= ' ' }
+//                    Log.d("bluetooth", "receive bt: $readMessage")
                 }
                 BluetoothConstants.MESSAGE_DEVICE_NAME -> {
                     val deviceName = msg.data.getString(BluetoothConstants.DEVICE_NAME)
