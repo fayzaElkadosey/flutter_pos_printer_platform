@@ -299,41 +299,37 @@ class BluetoothConnection constructor(handler: Handler) : IBluetoothConnection {
 
         private val mmInStream: InputStream? = mmSocket.inputStream
         private val mmOutStream: OutputStream? = mmSocket.outputStream
-        private val mmBuffer: ByteArray = ByteArray(1024) // mmBuffer store for the stream
+        private val mmBuffer: ByteArray = ByteArray(1024)
+
+        @Volatile
+        private var isCancelled = false
 
         override fun run() {
-            var numBytes: Int // bytes returned from read()
+            var numBytes: Int
 
-            // Keep listening to the InputStream while connected
-            while (true) {
-
-                // Read from the InputStream.
+            while (!isCancelled) {
                 numBytes = try {
                     mmInStream?.read(mmBuffer) ?: 0
                 } catch (e: IOException) {
-//                    Log.d(TAG, "Input stream was disconnected", e)
-                    connectionLost()
+                    // ما تبعتش رسالة لو احنا اللي قفلنا الاتصال
+                    if (!isCancelled) {
+                        connectionLost()
+                    }
                     break
                 }
-                // Send the obtained bytes to the UI Activity
-                val readMsg = mHandler.obtainMessage(BluetoothConstants.MESSAGE_READ, numBytes, -1, mmBuffer)
-                readMsg.sendToTarget()
 
+                if (numBytes > 0) {
+                    val readMsg = mHandler.obtainMessage(BluetoothConstants.MESSAGE_READ, numBytes, -1, mmBuffer)
+                    readMsg.sendToTarget()
+                }
             }
         }
 
-        /**
-         * Write to the connected OutStream.
-         *
-         * @param bytes The bytes to write
-         */
         fun write(bytes: ByteArray?) {
-//            Log.d(TAG, "envia ConnectedThread MESSAGE_SEND_BT_CMD " + String(bytes!!))
             try {
                 mmOutStream?.write(bytes)
+                mmOutStream?.flush()
             } catch (e: IOException) {
-//                Log.e(TAG, "Exception during write", e)
-                // Send a failure message back to the activity.
                 val writeErrorMsg = mHandler.obtainMessage(BluetoothConstants.MESSAGE_TOAST)
                 val bundle = Bundle().apply {
                     putInt(TOAST, R.string.fail_write_data)
@@ -343,30 +339,19 @@ class BluetoothConnection constructor(handler: Handler) : IBluetoothConnection {
                 return
             }
 
-            // Share the sent message back to the UI Activity
             val writtenMsg = mHandler.obtainMessage(BluetoothConstants.MESSAGE_WRITE, -1, -1, mmBuffer)
             writtenMsg.sendToTarget()
         }
 
         fun cancel() {
-//            try {
-//                mmInStream.close()
-//            } catch (ignored: Exception) {
-//            }
-//            try {
-//                mmOutStream.close()
-//            } catch (ignored: Exception) {
-//            }
+            isCancelled = true
             try {
                 mmSocket.close()
             } catch (e: IOException) {
                 Log.e(TAG, "close() of connect socket failed")
             }
         }
-
-
     }
-
     companion object {
 
 
